@@ -407,8 +407,8 @@ plt.show()
 
 1. **Citra Fotografis Natural (BMP / JPEG / PNG Wajah):**
    - **Teknik Paling Efektif:** **WebP Lossy (VP8)** dan **JPEG (DCT)**.
-   - *Alasan Ilmiah:* Citra fotografis memiliki transisi gradien warna kontinu dengan korelasi spasial tinggi. Kuantisasi psikovisual dalam domain frekuensi (DCT) membuang komponen frekuensi tinggi yang kurang sensitif bagi sistem penglihatan manusia (*HVS*). WebP Lossy mengungguli JPEG konvensional dengan rasio kompresi **193.1:1** (penghematan **99.48%**) pada PSNR **42.90 dB** (versus JPEG 63.6:1, PSNR 41.15 dB) berkat pemodelan prediksi spasial blok intra-frame.
-   - Sebaliknya, **RLE mengalami kegagalan fatal** pada citra natural (rasio 0.50:1, *space saving* -99.52%) karena tidak ada barisan piksel identik panjang; setiap piksel menghasilkan pasangan `(1, byte)` yang justru melipatgandakan ukuran data.
+   - *Alasan Ilmiah:* Citra fotografis memiliki transisi gradien warna kontinu dengan korelasi spasial tinggi. Kuantisasi psikovisual dalam domain frekuensi (DCT) membuang komponen frekuensi tinggi yang kurang sensitif bagi sistem penglihatan manusia (*HVS*). WebP Lossy mencapai rasio kompresi tertinggi **126.5:1** (penghematan **99.21%**) pada PSNR **41.96 dB**, sementara JPEG konvensional menghasilkan PSNR lebih tinggi **45.15 dB** dengan rasio 59.8:1 — keduanya menunjukkan *trade-off* antara ukuran dan kualitas.
+   - Sebaliknya, **RLE mengalami kegagalan fatal** pada citra natural (rasio 0.54:1, *space saving* -83.93%) karena tidak ada barisan piksel identik panjang; setiap piksel menghasilkan pasangan `(1, byte)` yang justru membengkakkan ukuran data hingga hampir dua kali lipat.
 
 2. **Citra Vektor / Grafis Komputer (SVG Rasterized):**
    - **Teknik Paling Efektif:** **WebP Lossless (VP8L)**.
@@ -484,7 +484,7 @@ plt.figure(figsize=(16, 18))
 wm_matrix_img = Image.open(os.path.join(OUTPUT_DIR, "watermarking_robustness_matrix.png"))
 plt.imshow(wm_matrix_img)
 plt.axis('off')
-plt.title("Matriks Hasil Ekstraksi Watermark di Bawah Serangan: LSB (Rapuh) vs DCT (Tangguh)", fontsize=14, fontweight='bold', pad=15)
+plt.title("Matriks Hasil Ekstraksi Watermark di Bawah Serangan: Perbandingan Ketahanan LSB vs DCT", fontsize=14, fontweight='bold', pad=15)
 plt.show()
 """))
 
@@ -495,20 +495,20 @@ plt.show()
 
 #### A. Perbandingan Empiris Ketahanan LSB vs DCT
 1. **Terhadap Kompresi Lossy JPEG ($Q = 50$ dan $Q = 30$):**
-   - **LSB hancur total:** Nilai BER melonjak hingga **67.82% - 73.83%** dan korelasi NCC anjlok ke **0.337 - 0.373** (logo tidak dapat dikenali, berupa derau acak). Hal ini karena kuantisasi koefisien frekuensi tinggi pada JPEG membulatkan nilai piksel secara drastis, menghapus bit terendah secara permanen.
-   - **DCT mampu bertahan:** Struktur logo tetap dapat diidentifikasi karena bit disematkan pada relasi koefisien frekuensi menengah yang dipertahankan oleh matriks kuantisasi standar JPEG.
+   - **LSB terdegradasi parah:** Nilai BER melonjak ke **61.28% (Q=50)** dan **58.47% (Q=30)**, dengan NCC anjlok ke **0.291** dan **0.270** (logo tidak dapat dikenali, berupa derau acak). Hal ini karena kuantisasi koefisien frekuensi tinggi pada JPEG membulatkan nilai piksel secara drastis, menghapus bit terendah secara permanen.
+   - **DCT relatif lebih tahan, tetapi tetap terdegradasi:** BER **26.05% (Q=50)** dan **22.88% (Q=30)** dengan NCC **0.154** dan **0.115**. Relasi koefisien frekuensi menengah DCT memang lebih bertahan daripada bit LSB, namun kuantisasi JPEG yang agresif tetap merusak sebagian besar bit yang disematkan.
 
 2. **Terhadap Derau Aditif Gaussian ($\\sigma = 10$):**
-   - **LSB:** BER mencapai **50.78%** (identik dengan tebakan acak 50/50), NCC **0.261**. Bit LSB tertutup derau acak secara menyeluruh.
-   - **DCT:** BER hanya **2.56%** dan NCC **0.9207** (logo terekstrak dengan sangat tajam dan jelas).
+   - **LSB:** BER mencapai **50.95%** (identik dengan tebakan acak 50/50), NCC **0.263**. Bit LSB tertutup derau acak secara menyeluruh.
+   - **DCT:** BER hanya **2.61%** dan NCC **0.9195** (logo terekstrak dengan sangat tajam dan jelas).
 
 3. **Terhadap Gaussian Blur ($3\\times 3$):**
-   - **LSB:** BER **25.51%**, NCC **0.4459**.
-   - **DCT:** BER hanya **0.68%** dan NCC **0.9775** (hampir sempurna). Operasi pemfilteran lolos-rendah (*low-pass filter*) tidak mengubah relasi tanda diferensial koefisien frekuensi menengah DCT.
+   - **LSB:** BER **28.54%**, NCC **0.401**.
+   - **DCT:** BER hanya **0.02%** dan NCC **0.9992** (hampir sempurna). Operasi pemfilteran lolos-rendah (*low-pass filter*) tidak mengubah relasi tanda diferensial koefisien frekuensi menengah DCT.
 
 4. **Terhadap Oklusi Spasial (Center Crop 15%):**
    - **LSB:** Karena bit LSB disematkan di pojok kiri atas ($64\\times 64$), pemotongan di bagian tengah tidak merusak area tersebut (BER 0%, NCC 1.0). Namun jika serangan pemotongan mengenai pojok kiri atas, LSB akan hilang 100%.
-   - **DCT:** Menunjukkan ketahanan terdistribusi yang sangat baik (BER 0.34%, NCC 0.9885).
+   - **DCT:** Menunjukkan ketahanan terdistribusi yang sangat baik (BER 0.27%, NCC 0.9909).
 
 ---
 
@@ -517,8 +517,8 @@ plt.show()
 | Teknik Watermarking | Kelebihan | Kekurangan | Rekomendasi Kasus Penggunaan |
 |---|---|---|---|
 | **Visible Watermark (Alpha Blending)** | 1. Memberikan efek jera langsung (*direct deterrent*).<br>2. Tidak memerlukan algoritma ekstraksi kompleks.<br>3. Sangat tahan terhadap manipulasi umum (crop kecil/kompresi). | 1. Merusak estetika dan nilai visual citra asli (PSNR rendah $\\approx 30$ dB).<br>2. Rentan dihilangkan dengan *inpainting* AI atau *cropping* bila diletakkan di tepi. | Gambar preview katalog daring, thumbnail stok foto, materi ajar e-learning. |
-| **LSB Embedding (Domain Spasial)** | 1. Tingkat imperceptibility luar biasa tinggi (PSNR $>75$ dB, SSIM $\\approx 0.99999$).<br>2. Kompleksitas komputasi $O(1)$ sangat cepat dan ringan.<br>3. Kapasitas muatan data (*payload*) besar. | 1. **Sangat rapuh (*fragile*):** Hancur oleh kompresi JPEG, derau, blur, atau konversi format.<br>2. Sangat mudah dideteksi dan diserang dengan analisis statistik bidang bit (*bit-plane slicing*). | Verifikasi integritas citra (*tamper detection*), steganografi rahasia saluran aman, citra medis tanpa kompresi. |
-| **DCT-based Differential (Domain Frekuensi)** | 1. **Sangat tangguh (*robust*):** Tahan terhadap kompresi lossy JPEG, derau Gaussian, dan filtering spasial.<br>2. Imperceptibility tinggi (PSNR $>42$ dB, SSIM $>0.95$).<br>3. Keamanan tinggi (*blind extraction* berbasis kunci koefisien). | 1. Kompleksitas komputasi lebih tinggi karena membutuhkan transformasi 2D-DCT dan 2D-IDCT pada setiap blok.<br>2. Kapasitas penyematan lebih kecil (1 bit per blok $8\\times 8$). | Perlindungan hak cipta digital (*copyright protection*), otentikasi karya seni digital, forensik multimedia. |
+| **LSB Embedding (Domain Spasial)** | 1. Tingkat imperceptibility luar biasa tinggi (PSNR $\\approx 74$ dB, SSIM $\\approx 0.99998$).<br>2. Kompleksitas komputasi $O(1)$ sangat cepat dan ringan.<br>3. Kapasitas muatan data (*payload*) besar. | 1. **Sangat rapuh (*fragile*):** Hancur oleh kompresi JPEG, derau, blur, atau konversi format.<br>2. Sangat mudah dideteksi dan diserang dengan analisis statistik bidang bit (*bit-plane slicing*). | Verifikasi integritas citra (*tamper detection*), steganografi rahasia saluran aman, citra medis tanpa kompresi. |
+| **DCT-based Differential (Domain Frekuensi)** | 1. **Lebih tangguh (*robust*):** Tahan terhadap derau Gaussian dan filtering spasial; relatif lebih tahan daripada LSB terhadap kompresi JPEG.<br>2. Imperceptibility tinggi (PSNR $\\approx 43$ dB, SSIM $\\approx 0.96$).<br>3. Keamanan tinggi (*blind extraction* berbasis kunci koefisien). | 1. Kompleksitas komputasi lebih tinggi karena membutuhkan transformasi 2D-DCT dan 2D-IDCT pada setiap blok.<br>2. Kapasitas penyematan lebih kecil (1 bit per blok $8\\times 8$). | Perlindungan hak cipta digital (*copyright protection*), otentikasi karya seni digital, forensik multimedia. |
 """))
 
     # --------------------------------------------------------------------------

@@ -452,10 +452,10 @@ def build_pdf_report():
         
     story.append(Paragraph(
         "<b>Analisis Temuan Kuantitatif:</b><br/>"
-        "1. <b>Keunggulan WebP pada Citra Natural:</b> Pada citra fotografi mentah (BMP), WebP Lossy menghasilkan rasio kompresi fantastis <b>193.1:1</b> "
-        "(penghematan 99.48%) dengan PSNR tinggi <b>42.90 dB</b> dan SSIM <b>0.9870</b>, secara signifikan mengungguli JPEG DCT konvensional (rasio 63.6:1, PSNR 41.15 dB). "
-        "Hal ini membuktikan superioritas prediksi intra-frame spasial WebP yang mampu mengekstrak dependensi lokal antar-blok sebelum transformasi.<br/>"
-        "2. <b>Kegagalan RLE pada Citra Kontinu:</b> RLE mengalami anomali 'kompresi negatif' (*space saving* -99.52% pada BMP, dan anjlok drastis pada citra lainnya) "
+        "1. <b>Perbandingan WebP vs JPEG pada Citra Natural:</b> Pada citra fotografi mentah (BMP), WebP Lossy menghasilkan rasio kompresi tertinggi <b>126.5:1</b> "
+        "(penghematan 99.21%) dengan PSNR <b>41.96 dB</b> dan SSIM <b>0.9775</b>, sementara JPEG DCT konvensional menawarkan kualitas rekonstruksi lebih tinggi (rasio 59.8:1, PSNR 45.15 dB, SSIM 0.9934). "
+        "Hal ini menunjukkan trade-off ukuran versus kualitas: WebP unggul dalam efisiensi penyimpanan berkat prediksi intra-frame spasial, sedangkan JPEG unggul dalam fidelitas rekonstruksi.<br/>"
+        "2. <b>Kegagalan RLE pada Citra Kontinu:</b> RLE mengalami anomali 'kompresi negatif' (*space saving* -83.93% pada BMP, dan anjlok drastis pada citra lainnya) "
         "karena citra fotografi tidak memiliki deretan piksel identik berturut-turut. Setiap piksel menghasilkan kode `(1, nilai)`, menggandakan ukuran data.<br/>"
         "3. <b>Kontras Performa pada Grafis Vektor (SVG):</b> Pada citra grafis SVG raster, WebP Lossless merupakan pilihan paling ideal (rasio 2.07:1, penghematan 51.70%, lossless murni). "
         "Sebaliknya, JPEG mengalami pemborosan bit (*space saving* negatif -80.75%) karena diskontinuitas tepi tajam pada grafis logo memicu fenomena Gibbs (banyak koefisien frekuensi tinggi harus dikodekan).",
@@ -554,7 +554,16 @@ def build_pdf_report():
         ]
         
         for _, row in df_r.iterrows():
-            status = "DCT Unggul Mutlak" if row['DCT NCC'] > row['LSB NCC'] else "Setara"
+            dct_intact = row['DCT NCC'] >= 0.7
+            lsb_intact = row['LSB NCC'] >= 0.7
+            if dct_intact and lsb_intact:
+                status = "Keduanya Utuh"
+            elif dct_intact and not lsb_intact:
+                status = "DCT Unggul Mutlak"
+            elif lsb_intact and not dct_intact:
+                status = "LSB Utuh"
+            else:
+                status = "Keduanya Terdegradasi"
             rob_table_data.append([
                 Paragraph(str(row['Attack Type']), table_cell_style),
                 Paragraph(f"{row['Attacked Image PSNR (dB)']:.2f}", table_cell_style),
@@ -581,7 +590,7 @@ def build_pdf_report():
     wm_matrix_path = os.path.join(OUTPUT_DIR, "watermarking_robustness_matrix.png")
     if os.path.exists(wm_matrix_path):
         story.append(RLImage(wm_matrix_path, width=7.0*inch, height=7.2*inch))
-        story.append(Paragraph("Gambar 3.2: Matriks visual ekstraksi watermark di bawah 5 skenario serangan (LSB hancur vs DCT tangguh).", caption_style))
+        story.append(Paragraph("Gambar 3.2: Matriks visual ekstraksi watermark di bawah 5 skenario serangan (perbandingan ketahanan LSB vs DCT).", caption_style))
         
     story.append(PageBreak())
     
@@ -592,14 +601,14 @@ def build_pdf_report():
         "Ketika citra mengalami kompresi lossy JPEG, citra dipartisi menjadi blok $8\\times 8$, ditransformasikan ke domain frekuensi melalui DCT, "
         "dan koefisien frekuensi tingginya dibagi oleh tabel kuantisasi psikovisual kemudian dibulatkan (*rounding*). "
         "Saat proses dekompresi (IDCT), rekonstruksi piksel mengalami pergeseran nilai rata-rata $\\pm 2$ hingga $\\pm 8$ intensitas. "
-        "Perubahan nilai sekecil $\\pm 1$ saja sudah membalik bit LSB secara acak. Inilah sebabnya nilai BER LSB melonjak hingga <b>67.8% - 73.8%</b> "
+        "Perubahan nilai sekecil $\\pm 1$ saja sudah membalik bit LSB secara acak. Inilah sebabnya nilai BER LSB melonjak hingga <b>58.5% - 61.3%</b> "
         "(identik dengan derau putih acak, logo hilang total).<br/><br/>"
         "<b>2. Mengapa DCT Begitu Tangguh (*Robust*) Terhadap Derau dan Pemfilteran?</b><br/>"
         "Sebaliknya, metode DCT diferensial menyematkan bit ke dalam hubungan relatif antar-koefisien frekuensi menengah $(4, 3)$ dan $(3, 4)$. "
         "Koefisien frekuensi menengah membawa porsi energi visual yang signifikan namun tidak dieliminasi secara agresif oleh kuantisasi JPEG. "
         "Operasi pemfilteran lolos-rendah (<i>Gaussian Blur</i>) dan derau Gaussian frekuensi tinggi meredam atau menambahkan energi secara merata "
         "pada kedua koefisien tetangga tersebut, sehingga selisih tanda $C_1 > C_2$ tetap dipertahankan. Hasilnya, watermark DCT terekstrak dengan "
-        "hampir sempurna (BER 0.68% pada blur, dan 2.56% pada derau Gaussian $\\sigma=10$, dengan NCC $>0.92$).",
+        "hampir sempurna (BER 0.02% pada blur, dan 2.61% pada derau Gaussian $\\sigma=10$, dengan NCC $>0.92$).",
         body_style
     ))
     
@@ -610,11 +619,11 @@ def build_pdf_report():
         "1. <b>Augmentasi Data DAiSEE:</b> Pemilihan teknik augmentasi wajib mempertimbangkan prior domain fisik masalah. "
         "Pembalikan horizontal, rotasi sudut kecil ($\pm 8^\circ$), *random crop-scale*, dan *color jitter* sangat ideal untuk menyimulasikan dinamika "
         "pembelajaran daring alami siswa, sedangkan rotasi bersudut besar ($>30^\circ$) tidak realistis dan merusak distribusi pose wajah natural.<br/>"
-        "2. <b>Kompresi Citra Multi-Format:</b> WebP Lossy terbukti menjadi teknik paling efisien untuk citra fotografi alami (rasio 193.1:1, penghematan 99.48%), "
+        "2. <b>Kompresi Citra Multi-Format:</b> WebP Lossy terbukti menjadi teknik paling efisien untuk citra fotografi alami (rasio 126.5:1, penghematan 99.21%), "
         "sedangkan WebP Lossless paling superior untuk citra grafis vektor SVG (rasio 2.07:1, penghematan 51.70%). JPEG mengalami degradasi efisiensi pada grafis tajam akibat artefak frekuensi tinggi DCT, "
         "sedangkan RLE gagal total pada citra fotografi kontinu.<br/>"
-        "3. <b>Watermarking Citra:</b> Terdapat kompromi mendasar (*trade-off*) antara imperceptibility dan robustness. Metode LSB menawarkan invisibilitas spasial ekstrem (PSNR 76.2 dB) namun sangat rapuh, "
-        "cocok untuk verifikasi integritas data (*tamper detection*). Sebaliknya, metode DCT domain frekuensi menawarkan ketahanan luar biasa terhadap kompresi JPEG dan derau, "
+        "3. <b>Watermarking Citra:</b> Terdapat kompromi mendasar (*trade-off*) antara imperceptibility dan robustness. Metode LSB menawarkan invisibilitas spasial ekstrem (PSNR 73.9 dB) namun sangat rapuh, "
+        "cocok untuk verifikasi integritas data (*tamper detection*). Sebaliknya, metode DCT domain frekuensi menawarkan ketahanan luar biasa terhadap derau dan pemfilteran (blur), "
         "menjadikannya standar terbaik untuk perlindungan hak cipta digital (*copyright protection*).",
         body_style
     ))
