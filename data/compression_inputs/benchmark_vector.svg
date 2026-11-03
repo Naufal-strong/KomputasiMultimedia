@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A2980" />
+      <stop offset="100%" stop-color="#26D0CE" />
+    </linearGradient>
+    <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFE000" />
+      <stop offset="100%" stop-color="#799F0C" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background Rect -->
+  <rect width="512" height="512" fill="url(#bgGrad)" rx="30" />
+  
+  <!-- Central Abstract Multimedia Shape -->
+  <circle cx="256" cy="200" r="110" fill="url(#sunGrad)" opacity="0.9" />
+  
+  <!-- Vector Polygon / Play Triangle -->
+  <polygon points="220,140 330,200 220,260" fill="#FFFFFF" />
+  
+  <!-- Decorative Wave Paths -->
+  <path d="M 40 380 Q 140 320 256 380 T 472 380" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+  <path d="M 60 410 Q 160 360 256 410 T 452 410" fill="none" stroke="#FFE000" stroke-width="5" stroke-linecap="round" opacity="0.8" />
+  
+  <!-- Decorative Dots -->
+  <circle cx="90" cy="90" r="15" fill="#FFFFFF" opacity="0.7" />
+  <circle cx="430" cy="110" r="22" fill="#FFFFFF" opacity="0.5" />
+  <circle cx="120" cy="280" r="10" fill="#FFE000" opacity="0.6" />
+  
+  <!-- Text Label -->
+  <text x="256" y="465" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF" text-anchor="middle">
+    KOMPUTASI MULTIMEDIA
+  </text>
+  <text x="256" y="492" font-family="Arial, sans-serif" font-size="16" fill="#E0F7FA" text-anchor="middle">
+    Vector Graphic Benchmark (SVG)
+  </text>
+</svg>
