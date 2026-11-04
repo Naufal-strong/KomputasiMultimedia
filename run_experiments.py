@@ -30,15 +30,23 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
-DIR_VIDEO = os.path.join(DATA_DIR, "video")
-DIR_EXTRACTED = os.path.join(DATA_DIR, "extracted_frames")
-DIR_SAMPLES = os.path.join(DATA_DIR, "sample_10_frames")
-DIR_AUGMENTED = os.path.join(DATA_DIR, "augmented_images")
-DIR_COMP_INPUTS = os.path.join(DATA_DIR, "compression_inputs")
-DIR_COMP_RESULTS = os.path.join(DATA_DIR, "compression_results")
-DIR_WATERMARK = os.path.join(DATA_DIR, "watermark_results")
+# Bagian A: augmentasi data DAiSEE
+DIR_VIDEO = os.path.join(DATA_DIR, "bagian_a", "video")
+DIR_EXTRACTED = os.path.join(DATA_DIR, "bagian_a", "extracted_frames")
+DIR_SAMPLES = os.path.join(DATA_DIR, "bagian_a", "sample_10_frames")
+DIR_AUGMENTED = os.path.join(DATA_DIR, "bagian_a", "augmented_images")
+# Bagian B: kompresi citra
+DIR_COMP_INPUTS = os.path.join(DATA_DIR, "bagian_b", "compression_inputs")
+DIR_COMP_RESULTS = os.path.join(DATA_DIR, "bagian_b", "compression_results")
+# Bagian C: watermarking
+DIR_WATERMARK = os.path.join(DATA_DIR, "bagian_c", "watermark_results")
 
-for d in [DIR_VIDEO, DIR_EXTRACTED, DIR_SAMPLES, DIR_AUGMENTED, DIR_COMP_INPUTS, DIR_COMP_RESULTS, DIR_WATERMARK, OUTPUT_DIR]:
+# Output visualisasi per bagian
+DIR_OUTPUT_A = os.path.join(OUTPUT_DIR, "bagian_a")
+DIR_OUTPUT_B = os.path.join(OUTPUT_DIR, "bagian_b")
+DIR_OUTPUT_C = os.path.join(OUTPUT_DIR, "bagian_c")
+
+for d in [DIR_VIDEO, DIR_EXTRACTED, DIR_SAMPLES, DIR_AUGMENTED, DIR_COMP_INPUTS, DIR_COMP_RESULTS, DIR_WATERMARK, DIR_OUTPUT_A, DIR_OUTPUT_B, DIR_OUTPUT_C]:
     os.makedirs(d, exist_ok=True)
 
 print("Directories initialized successfully.")
@@ -292,7 +300,7 @@ def run_augmentation_pipeline(sampled_paths, base_aug_dir):
             axes[row, col+1].set_title(f"{clean_name}", fontsize=10)
             axes[row, col+1].axis('off')
             
-    grid_path = os.path.join(OUTPUT_DIR, "augmentation_grid_comparison.png")
+    grid_path = os.path.join(DIR_OUTPUT_A, "augmentation_grid_comparison.png")
     plt.tight_layout()
     plt.savefig(grid_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -639,10 +647,10 @@ def run_compression_benchmarks(image_dict, comp_results_dir):
     print(f"Saved compression benchmark metrics to {csv_path}")
     
     # Generate Charts
-    generate_compression_charts(df, OUTPUT_DIR)
+    generate_compression_charts(df, DIR_OUTPUT_B)
     
     # Generate Visual Side-by-Side Comparison
-    generate_compression_visual_comparison(image_dict, df, OUTPUT_DIR)
+    generate_compression_visual_comparison(image_dict, df, DIR_OUTPUT_B)
     
     return df
 
@@ -1114,7 +1122,7 @@ def run_watermarking_pipeline(host_image_path, watermark_dir):
     
     # 5. Visual Figures for Watermarking
     generate_watermarking_visualizations(orig_rgb, wm_visible, wm_lsb, wm_dct, wm_logo, 
-                                         extracted_images_cache, attacks, OUTPUT_DIR)
+                                         extracted_images_cache, attacks, DIR_OUTPUT_C)
     
     return df_impercept, df_robustness
 
@@ -1272,7 +1280,7 @@ def main():
     
     print("\n" + "=" * 80)
     print("SELURUH EKSPERIMEN BERHASIL DISELESAIKAN!")
-    print(f"Hasil data dan visualisasi tersimpan di: {OUTPUT_DIR} dan subfolder {DATA_DIR}")
+    print(f"Hasil data tersimpan di {DATA_DIR} (bagian_a/b/c) dan visualisasi di {OUTPUT_DIR} (bagian_a/b/c)")
     print("=" * 80)
 
 if __name__ == "__main__":

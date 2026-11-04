@@ -10,15 +10,15 @@
 Proyek ini menyelesaikan seluruh instruksi **Tugas 2 Komputasi Multimedia** secara tuntas, mencakup:
 1. **Laporan Resmi PDF:** [`Laporan_Tugas2_KomputasiMultimedia.pdf`](./Laporan_Tugas2_KomputasiMultimedia.pdf) (12 Halaman komprehensif, dilengkapi cover resmi, pembahasan teoretis, tabel komparasi 10 teknik kompresi, metrik empiris, grafik beresolusi tinggi, dan sitasi IEEE/APA dengan DOI).
 2. **Interactive Jupyter Notebook:** [`Tugas2_KomputasiMultimedia.ipynb`](./Tugas2_KomputasiMultimedia.ipynb) (18 sel interaktif terstruktur, mandiri, siap dijalankan langsung di VS Code / JupyterLab / Google Colab).
-3. **Folder Data & Hasil Eksperimen:**
-   - `data/video/`: Berkas video e-learning representatif DAiSEE (300 frame, 30 FPS).
-   - `data/extracted_frames/`: 300 frame hasil ekstraksi video.
-   - `data/sample_10_frames/`: 10 frame yang dipilih secara acak menggunakan *reproducible seed* (`seed = 42`).
-   - `data/augmented_images/`: Folder terpisah per teknik augmentasi (Horizontal Flip, Slight Rotation, Random Crop & Scale, Color Jitter, Gaussian Noise, Gaussian Blur).
-   - `data/compression_inputs/`: Citra benchmark multi-format (`.bmp`, `.jpg`, `.png`, `.svg`, dan hasil rasterisasi SVG).
-   - `data/compression_results/`: Berkas terkompresi (RLE, JPEG, WebP Lossy & Lossless) serta `compression_benchmark_summary.csv`.
-   - `data/watermark_results/`: Logo watermark biner, citra ter-watermark (Visible, LSB, DCT), hasil ekstraksi, berkas serangan manipulasi, serta `watermark_robustness_summary.csv`.
-   - `output/`: Seluruh visualisasi grafis resolusi tinggi (grid augmentasi, grafik rasio kompresi, grafik *space saving*, grafik kualitas vs waktu, visualisasi residual heatmap, dan matriks ketahanan watermarking).
+3. **Folder Data & Hasil Eksperimen (terpisah per Bagian A/B/C):**
+   - `data/bagian_a/video/`: Berkas video e-learning representatif DAiSEE (300 frame, 30 FPS).
+   - `data/bagian_a/extracted_frames/`: 300 frame hasil ekstraksi video.
+   - `data/bagian_a/sample_10_frames/`: 10 frame yang dipilih secara acak menggunakan *reproducible seed* (`seed = 42`).
+   - `data/bagian_a/augmented_images/`: Folder terpisah per teknik augmentasi (Horizontal Flip, Slight Rotation, Random Crop & Scale, Color Jitter, Gaussian Noise, Gaussian Blur).
+   - `data/bagian_b/compression_inputs/`: Citra benchmark multi-format (`.bmp`, `.jpg`, `.png`, `.svg`, dan hasil rasterisasi SVG).
+   - `data/bagian_b/compression_results/`: Berkas terkompresi (RLE, JPEG, WebP Lossy & Lossless) serta `compression_benchmark_summary.csv`.
+   - `data/bagian_c/watermark_results/`: Logo watermark biner, citra ter-watermark (Visible, LSB, DCT), hasil ekstraksi, berkas serangan manipulasi, serta `watermark_robustness_summary.csv`.
+   - `output/bagian_a/`, `output/bagian_b/`, `output/bagian_c/`: Seluruh visualisasi grafis resolusi tinggi per bagian (grid augmentasi, grafik rasio kompresi, grafik *space saving*, grafik kualitas vs waktu, visualisasi residual heatmap, dan matriks ketahanan watermarking).
 4. **Dependensi:** [`requirements.txt`](./requirements.txt).
 
 ---
@@ -60,7 +60,7 @@ python generate_report_pdf.py
 
 ### Bagian A: Augmentasi Data (DAiSEE)
 - **Horizontal Flipping:** Sangat aman dan valid karena simetri bilateral ekspresi afektif wajah manusia (Shorten & Khoshgoftaar, 2019).
-- **Rotasi Kecil ($\pm 8^\circ$) vs Rotasi Besar ($>30^\circ$):** Rotasi kecil merefleksikan *head tilt* saat siswa berpikir/bingung. Rotasi besar merusak prior gravitasi posisi duduk siswa di depan laptop (Kumar et al., 2016; Dewan et al., 2019).
+- **Rotasi Kecil ($\pm 8^\circ$) vs Rotasi Besar ($>30^\circ$):** Rotasi kecil merefleksikan *head tilt* saat siswa berpikir/bingung. Rotasi besar merusak prior gravitasi posisi duduk siswa di depan laptop (Gupta et al., 2016; Dewan et al., 2019).
 - **Random Crop & Scale, Color Jitter, Noise, Blur:** Sangat sesuai untuk memodelkan variasi jarak kamera, fluktuasi pencahayaan ruangan kamar, serta keterbatasan sensor kamera web murah.
 
 ### Bagian B: Image Compression

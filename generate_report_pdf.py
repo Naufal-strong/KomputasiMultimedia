@@ -20,8 +20,11 @@ from reportlab.pdfgen import canvas
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
-DIR_COMP_RESULTS = os.path.join(DATA_DIR, "compression_results")
-DIR_WATERMARK = os.path.join(DATA_DIR, "watermark_results")
+DIR_COMP_RESULTS = os.path.join(DATA_DIR, "bagian_b", "compression_results")
+DIR_WATERMARK = os.path.join(DATA_DIR, "bagian_c", "watermark_results")
+DIR_OUTPUT_A = os.path.join(OUTPUT_DIR, "bagian_a")
+DIR_OUTPUT_B = os.path.join(OUTPUT_DIR, "bagian_b")
+DIR_OUTPUT_C = os.path.join(OUTPUT_DIR, "bagian_c")
 PDF_PATH = os.path.join(BASE_DIR, "Laporan_Tugas2_KomputasiMultimedia.pdf")
 
 class NumberedCanvas(canvas.Canvas):
@@ -237,7 +240,7 @@ def build_pdf_report():
     story.append(Paragraph(
         "Augmentasi data citra merupakan salah satu pilar transformasi citra paling fundamental dalam visi komputer modern, "
         "khususnya untuk mencegah <i>overfitting</i> pada arsitektur <i>Deep Convolutional Neural Networks</i> (CNN) ketika data pelatihan "
-        "terbatas. Dataset <b>DAiSEE (<i>Dataset for Affective States in E-learning Environments</i>)</b> (Kumar et al., 2016) merupakan "
+        "terbatas. Dataset <b>DAiSEE (<i>Dataset for Affective States in E-learning Environments</i>)</b> (Gupta et al., 2016) merupakan "
         "koleksi video multi-subjek berskala besar yang dirancang khusus untuk memprediksi empat kondisi afektif siswa saat belajar mandiri secara daring: "
         "<i>Engagement</i> (Keterlibatan), <i>Boredom</i> (Kebosanan), <i>Confusion</i> (Kebingungan), dan <i>Frustration</i> (Frustrasi). "
         "Video DAiSEE direkam menggunakan kamera web (<i>webcam</i>) komputer/laptop dalam kondisi pencahayaan dan lingkungan kamar nyata (<i>in-the-wild</i>).",
@@ -301,7 +304,7 @@ def build_pdf_report():
     story.append(Paragraph("1.4 Visualisasi Grid Hasil Augmentasi Citra", h2_style))
     story.append(Paragraph("Berikut disajikan perbandingan berdampingan citra asli dan enam teknik augmentasi untuk sampel representatif:", body_style))
     
-    grid_img_path = os.path.join(OUTPUT_DIR, "augmentation_grid_comparison.png")
+    grid_img_path = os.path.join(DIR_OUTPUT_A, "augmentation_grid_comparison.png")
     if os.path.exists(grid_img_path):
         story.append(RLImage(grid_img_path, width=7.0*inch, height=3.6*inch))
         story.append(Paragraph("Gambar 1.1: Matriks perbandingan visual citra asli sampel DAiSEE dan hasil 6 teknik augmentasi citra.", caption_style))
@@ -442,8 +445,8 @@ def build_pdf_report():
     story.append(Spacer(1, 8))
     story.append(Paragraph("2.4 Grafik Perbandingan Kinerja dan Analisis Hasil", h2_style))
     
-    chart_cr_path = os.path.join(OUTPUT_DIR, "chart_compression_ratio.png")
-    chart_ss_path = os.path.join(OUTPUT_DIR, "chart_space_saving.png")
+    chart_cr_path = os.path.join(DIR_OUTPUT_B, "chart_compression_ratio.png")
+    chart_ss_path = os.path.join(DIR_OUTPUT_B, "chart_space_saving.png")
     if os.path.exists(chart_cr_path) and os.path.exists(chart_ss_path):
         story.append(RLImage(chart_cr_path, width=6.8*inch, height=2.4*inch))
         story.append(Paragraph("Gambar 2.1: Perbandingan Nisbah / Rasio Kompresi (Compression Ratio).", caption_style))
@@ -524,7 +527,7 @@ def build_pdf_report():
     story.append(t_wm_imp)
     story.append(Paragraph("Tabel 3.1: Evaluasi imperceptibility citra ber-watermark.", caption_style))
     
-    wm_overview_path = os.path.join(OUTPUT_DIR, "watermarking_overview.png")
+    wm_overview_path = os.path.join(DIR_OUTPUT_C, "watermarking_overview.png")
     if os.path.exists(wm_overview_path):
         story.append(RLImage(wm_overview_path, width=7.0*inch, height=1.75*inch))
         story.append(Paragraph("Gambar 3.1: Citra asli (host) berdampingan dengan hasil Visible, LSB, dan DCT watermarking.", caption_style))
@@ -587,7 +590,7 @@ def build_pdf_report():
         story.append(Paragraph("Tabel 3.2: Perbandingan empiris ketahanan ekstraksi watermark LSB vs DCT di bawah berbagai serangan.", caption_style))
         
     story.append(Spacer(1, 8))
-    wm_matrix_path = os.path.join(OUTPUT_DIR, "watermarking_robustness_matrix.png")
+    wm_matrix_path = os.path.join(DIR_OUTPUT_C, "watermarking_robustness_matrix.png")
     if os.path.exists(wm_matrix_path):
         story.append(RLImage(wm_matrix_path, width=7.0*inch, height=7.2*inch))
         story.append(Paragraph("Gambar 3.2: Matriks visual ekstraksi watermark di bawah 5 skenario serangan (perbandingan ketahanan LSB vs DCT).", caption_style))
@@ -635,15 +638,15 @@ def build_pdf_report():
     references = [
         "[1] I. J. Cox, M. L. Miller, J. A. Bloom, J. Fridrich, and T. Kalker, <i>Digital Watermarking and Steganography</i>, 2nd ed. San Francisco, CA: Morgan Kaufmann, 2007. ISBN: 978-0123725851.",
         "[2] P. Deutsch, 'DEFLATE Compressed Data Format Specification version 1.3,' RFC 1951, May 1996. DOI: <a href='https://doi.org/10.17487/RFC1951'>10.17487/RFC1951</a>.",
-        "[3] M. A. A. Dewan, M. Murshed, and F. Lin, 'Engagement analysis in online learning: A review,' <i>Computers & Education</i>, vol. 141, p. 103628, 2019. DOI: <a href='https://doi.org/10.1016/j.compedu.2019.103628'>10.1016/j.compedu.2019.103628</a>.",
+        "[3] M. A. A. Dewan, M. Murshed, and F. Lin, 'Engagement detection in online learning: a review,' <i>Smart Learning Environments</i>, vol. 6, no. 1, p. 1, 2019. DOI: <a href='https://doi.org/10.1186/s40561-018-0080-z'>10.1186/s40561-018-0080-z</a>.",
         "[4] S. Golomb, 'Run-length encodings,' <i>IEEE Transactions on Information Theory</i>, vol. 12, no. 3, pp. 399–401, 1966. DOI: <a href='https://doi.org/10.1109/TIT.1966.1053907'>10.1109/TIT.1966.1053907</a>.",
         "[5] R. Gray, 'Vector quantization,' <i>IEEE ASSP Magazine</i>, vol. 1, no. 2, pp. 4–29, 1984. DOI: <a href='https://doi.org/10.1109/MASSP.1984.1162229'>10.1109/MASSP.1984.1162229</a>.",
         "[6] D. A. Huffman, 'A Method for the Construction of Minimum-Redundancy Codes,' <i>Proceedings of the IRE</i>, vol. 40, no. 9, pp. 1098–1101, 1952. DOI: <a href='https://doi.org/10.1109/JRPROC.1952.273898'>10.1109/JRPROC.1952.273898</a>.",
-        "[7] A. E. Jacquin, 'Image coding based on a fractal theory of iterated contractive image transformations,' <i>IEEE Transactions on Image Processing</i>, vol. 1, no. 1, pp. 18–30, 1992. DOI: <a href='https://doi.org/10.1109/5.136869'>10.1109/5.136869</a>.",
-        "[8] A. Kumar, R. Sharma, and L. Vig, 'DAiSEE: Towards User Engagement Recognition in the Wild,' <i>arXiv preprint arXiv:1609.01883</i>, 2016. DOI: <a href='https://doi.org/10.48550/arXiv.1609.01883'>10.48550/arXiv.1609.01883</a>.",
+        "[7] A. E. Jacquin, 'Image coding based on a fractal theory of iterated contractive image transformations,' <i>IEEE Transactions on Image Processing</i>, vol. 1, no. 1, pp. 18–30, 1992. DOI: <a href='https://doi.org/10.1109/83.128028'>10.1109/83.128028</a>.",
+        "[8] A. Gupta, A. D'Cunha, K. Awasthi, and V. Balasubramanian, 'DAiSEE: Towards User Engagement Recognition in the Wild,' <i>arXiv preprint arXiv:1609.01885</i>, 2016. DOI: <a href='https://doi.org/10.48550/arXiv.1609.01885'>10.48550/arXiv.1609.01885</a>.",
         "[9] C. Shorten and T. M. Khoshgoftaar, 'A survey on Image Data Augmentation for Deep Learning,' <i>Journal of Big Data</i>, vol. 6, no. 1, p. 60, 2019. DOI: <a href='https://doi.org/10.1186/s40537-019-0197-0'>10.1186/s40537-019-0197-0</a>.",
-        "[10] A. Skodras, C. Christopoulos, and T. Ebrahimi, 'The JPEG 2000 still image compression standard,' <i>IEEE Signal Processing Magazine</i>, vol. 18, no. 5, pp. 36–58, 2001. DOI: <a href='https://doi.org/10.1109/79.952801'>10.1109/79.952801</a>.",
-        "[11] G. K. Wallace, 'The JPEG still picture compression standard,' <i>IEEE Transactions on Consumer Electronics</i>, vol. 38, no. 1, pp. xviii–xxxiv, 1991. DOI: <a href='https://doi.org/10.1109/30.89988'>10.1109/30.89988</a>.",
+        "[10] A. Skodras, C. Christopoulos, and T. Ebrahimi, 'The JPEG 2000 still image compression standard,' <i>IEEE Signal Processing Magazine</i>, vol. 18, no. 5, pp. 36–58, 2001. DOI: <a href='https://doi.org/10.1109/79.952804'>10.1109/79.952804</a>.",
+        "[11] G. K. Wallace, 'The JPEG still picture compression standard,' <i>IEEE Transactions on Consumer Electronics</i>, vol. 38, no. 1, pp. xviii–xxxiv, 1991. DOI: <a href='https://doi.org/10.1109/30.125072'>10.1109/30.125072</a>.",
         "[12] T. A. Welch, 'A Technique for High-Performance Data Compression,' <i>Computer</i>, vol. 17, no. 6, pp. 8–19, 1984. DOI: <a href='https://doi.org/10.1109/MC.1984.1659158'>10.1109/MC.1984.1659158</a>.",
         "[13] I. H. Witten, R. M. Neal, and J. G. Cleary, 'Arithmetic coding for data compression,' <i>Communications of the ACM</i>, vol. 30, no. 6, pp. 520–540, 1987. DOI: <a href='https://doi.org/10.1145/214762.214771'>10.1145/214762.214771</a>."
     ]

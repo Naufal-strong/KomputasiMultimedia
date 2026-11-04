@@ -12,11 +12,12 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Raw large video datasets (14.7 GB)
-data/video/
-data/extracted_frames/
+data/bagian_a/video/
+data/bagian_a/extracted_frames/
 
 # System / IDE
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+

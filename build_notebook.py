@@ -59,8 +59,11 @@ import random
 import numpy as np
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import matplotlib
+%matplotlib inline
 import matplotlib.pyplot as plt
 import pandas as pd
+from IPython.display import display
 from scipy.fftpack import dct, idct
 from skimage.metrics import peak_signal_noise_ratio as compute_psnr
 from skimage.metrics import structural_similarity as compute_ssim
@@ -72,19 +75,44 @@ np.random.seed(RANDOM_SEED)
 print(f"[STATUS] Random seed diatur secara global ke: {RANDOM_SEED}")
 
 # Setup Direktori Data dan Output
-BASE_DIR = os.getcwd()
+# Deteksi root proyek secara ROBUST: dimulai dari cwd lalu naik ke direktori
+# induk sampai folder `data` dan `output` ditemukan. Mendukung Jupyter,
+# VS Code, Antigravity, dan Colab (asal folder data/output ada di sisi kernel).
+def _find_project_root(start_dir):
+    cur = os.path.abspath(start_dir)
+    for _ in range(10):
+        if os.path.isdir(os.path.join(cur, "data")) and os.path.isdir(os.path.join(cur, "output")):
+            return cur
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            break
+        cur = parent
+    return os.path.abspath(start_dir)
+
+BASE_DIR = _find_project_root(os.getcwd())
 DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+print(f"[STATUS] Root proyek terdeteksi di: {BASE_DIR}")
 
-DIR_VIDEO = os.path.join(DATA_DIR, "video")
-DIR_EXTRACTED = os.path.join(DATA_DIR, "extracted_frames")
-DIR_SAMPLES = os.path.join(DATA_DIR, "sample_10_frames")
-DIR_AUGMENTED = os.path.join(DATA_DIR, "augmented_images")
-DIR_COMP_INPUTS = os.path.join(DATA_DIR, "compression_inputs")
-DIR_COMP_RESULTS = os.path.join(DATA_DIR, "compression_results")
-DIR_WATERMARK = os.path.join(DATA_DIR, "watermark_results")
+if not os.path.isdir(DATA_DIR):
+    print("[PERINGATAN] Folder 'data' TIDAK ditemukan di lokasi tersebut.")
+    print("  -> Pastikan notebook dibuka di dalam folder proyek, ATAU")
+    print("  -> Jika memakai Google Colab / Antigravity cloud: unggah folder 'data'")
+    print("     dan 'output' ke sisi kernel melalui panel Files.")
 
-for d in [DIR_VIDEO, DIR_EXTRACTED, DIR_SAMPLES, DIR_AUGMENTED, DIR_COMP_INPUTS, DIR_COMP_RESULTS, DIR_WATERMARK, OUTPUT_DIR]:
+DIR_VIDEO = os.path.join(DATA_DIR, "bagian_a", "video")
+DIR_EXTRACTED = os.path.join(DATA_DIR, "bagian_a", "extracted_frames")
+DIR_SAMPLES = os.path.join(DATA_DIR, "bagian_a", "sample_10_frames")
+DIR_AUGMENTED = os.path.join(DATA_DIR, "bagian_a", "augmented_images")
+DIR_COMP_INPUTS = os.path.join(DATA_DIR, "bagian_b", "compression_inputs")
+DIR_COMP_RESULTS = os.path.join(DATA_DIR, "bagian_b", "compression_results")
+DIR_WATERMARK = os.path.join(DATA_DIR, "bagian_c", "watermark_results")
+
+DIR_OUTPUT_A = os.path.join(OUTPUT_DIR, "bagian_a")
+DIR_OUTPUT_B = os.path.join(OUTPUT_DIR, "bagian_b")
+DIR_OUTPUT_C = os.path.join(OUTPUT_DIR, "bagian_c")
+
+for d in [DIR_VIDEO, DIR_EXTRACTED, DIR_SAMPLES, DIR_AUGMENTED, DIR_COMP_INPUTS, DIR_COMP_RESULTS, DIR_WATERMARK, DIR_OUTPUT_A, DIR_OUTPUT_B, DIR_OUTPUT_C]:
     os.makedirs(d, exist_ok=True)
 
 print("[STATUS] Struktur folder direktori terverifikasi.")
@@ -97,7 +125,7 @@ print("[STATUS] Struktur folder direktori terverifikasi.")
 ## Bagian A. Augmentasi Data pada Dataset DAiSEE
 
 ### 1. Landasan Teori dan Konteks Dataset DAiSEE
-Dataset **DAiSEE (*Dataset for Affective States in E-learning Environments*)** (Kumar et al., 2016) merupakan dataset patokan (*benchmark*) untuk menganalisis keadaan afektif siswa dalam pembelajaran daring *in-the-wild*. DAiSEE mencakup 4 label afektif utama:
+Dataset **DAiSEE (*Dataset for Affective States in E-learning Environments*)** (Gupta et al., 2016) merupakan dataset patokan (*benchmark*) untuk menganalisis keadaan afektif siswa dalam pembelajaran daring *in-the-wild*. DAiSEE mencakup 4 label afektif utama:
 1. **Engagement** (Keterlibatan)
 2. **Boredom** (Kebosanan)
 3. **Confusion** (Kebingungan)
@@ -116,7 +144,7 @@ Video direkam dari kamera web (*webcam*) laptop/komputer siswa di lingkungan bel
    - *Cara Kerja:* Transformasi afina matriks rotasi 2D terhadap titik pusat citra $(c_x, c_y)$ dengan interpolasi bilinear dan *reflection border padding*.
    - *Justifikasi untuk DAiSEE:* **SANGAT SESUAI DENGAN SUDUT KECIL ($\\le 10^\\circ$), NAMUN ROTASI BESAR ($>30^\\circ$ ATAU $90^\\circ$) TIDAK SESUAI.**
      - Siswa dalam pembelajaran daring duduk tegak di depan meja/layar laptop di bawah pengaruh gravitasi bumi.
-     - Kepala siswa tidak pernah berputar $90^\\circ$ atau terbalik $180^\\circ$. Rotasi besar merusak *natural head-pose prior* dan menurunkan performa detektor wajah/pose (Kumar et al., 2016; Dewan et al., 2019).
+     - Kepala siswa tidak pernah berputar $90^\\circ$ atau terbalik $180^\\circ$. Rotasi besar merusak *natural head-pose prior* dan menurunkan performa detektor wajah/pose (Gupta et al., 2016; Dewan et al., 2019).
      - Sebaliknya, rotasi kecil ($\pm 5^\circ - 10^\circ$) sangat natural untuk mereplikasi *head tilt* ketika siswa sedang berpikir, bingung, atau mencatat.
 
 3. **Random Cropping & Scaling (Pemotongan & Penskalaan Ulang: Rasio 0.88)**
@@ -136,9 +164,9 @@ Video direkam dari kamera web (*webcam*) laptop/komputer siswa di lingkungan bel
    - *Justifikasi untuk DAiSEE:* **SANGAT SESUAI.** Mensimulasikan *defocus* kamera web murah serta *motion blur* yang terjadi ketika siswa mengangguk atau menggelengkan kepala dengan cepat.
 
 ### 3. Referensi Ilmiah Pendukung
-1. **Kumar, A., Sharma, R., & Vig, L. (2016).** *DAiSEE: Towards User Engagement Recognition in the Wild.* arXiv preprint arXiv:1609.01883. DOI: [10.48550/arXiv.1609.01883](https://doi.org/10.48550/arXiv.1609.01883).
+1. **Gupta, A., D'Cunha, A., Awasthi, K., & Balasubramanian, V. (2016).** *DAiSEE: Towards User Engagement Recognition in the Wild.* arXiv preprint arXiv:1609.01885. DOI: [10.48550/arXiv.1609.01885](https://doi.org/10.48550/arXiv.1609.01885).
 2. **Shorten, C., & Khoshgoftaar, T. M. (2019).** *A survey on Image Data Augmentation for Deep Learning.* Journal of Big Data, 6(1), 60. DOI: [10.1186/s40537-019-0197-0](https://doi.org/10.1186/s40537-019-0197-0).
-3. **Dewan, M. A. A., Murshed, M., & Lin, F. (2019).** *Engagement analysis in online learning: A review.* Computers & Education, 141, 103628. DOI: [10.1016/j.compedu.2019.103628](https://doi.org/10.1016/j.compedu.2019.103628).
+3. **Dewan, M. A. A., Murshed, M., & Lin, F. (2019).** *Engagement detection in online learning: a review.* Smart Learning Environments, 6(1), 1. DOI: [10.1186/s40561-018-0080-z](https://doi.org/10.1186/s40561-018-0080-z).
 """))
 
     # --------------------------------------------------------------------------
@@ -156,6 +184,13 @@ def find_daisee_video(video_dir):
 
 video_file = find_daisee_video(DIR_VIDEO)
 print(f"[INFO] Membaca video DAiSEE: {video_file}")
+
+if not os.path.exists(video_file):
+    raise FileNotFoundError(
+        f"Video tidak ditemukan di: {video_file}\\n"
+        "Pastikan notebook dijalankan di dalam folder proyek (folder 'data' harus ada),\\n"
+        "atau unggah folder 'data' ke sisi kernel jika memakai Colab/Antigravity cloud."
+    )
 
 cap = cv2.VideoCapture(video_file)
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -175,6 +210,12 @@ while cap.isOpened():
 cap.release()
 
 print(f"[SUKSES] Berhasil mengekstrak {len(extracted_frame_paths)} frame ke {DIR_EXTRACTED}")
+
+if len(extracted_frame_paths) == 0:
+    raise RuntimeError(
+        "Gagal mengekstrak frame: video tidak dapat dibaca oleh OpenCV.\\n"
+        "Pastikan codec video (mis. .avi/.mp4) didukung di lingkungan kernel Anda."
+    )
 
 # 2. Pengambilan 10 Gambar Secara Acak (Reproducible Seed)
 random.seed(RANDOM_SEED)
@@ -240,7 +281,7 @@ print("[SUKSES] Seluruh hasil augmentasi tersimpan di folder masing-masing.")
 """))
 
     cells.append(nbf.v4.new_code_cell("""# 4. Visualisasi Grid Berdampingan (Citra Asli vs Hasil Augmentasi)
-grid_fig_path = os.path.join(OUTPUT_DIR, "augmentation_grid_comparison.png")
+grid_fig_path = os.path.join(DIR_OUTPUT_A, "augmentation_grid_comparison.png")
 if os.path.exists(grid_fig_path):
     grid_img = Image.open(grid_fig_path)
     plt.figure(figsize=(16, 9))
@@ -292,13 +333,13 @@ if os.path.exists(grid_fig_path):
    - *Algoritma:* Transformasi warna YCbCr $\\rightarrow$ *Chroma Subsampling* $\\rightarrow$ Partisi blok $8\\times 8$ $\\rightarrow$ 2D-DCT $\\rightarrow$ Kuantisasi psikovisual $\\rightarrow$ Pemindaian Zigzag $\\rightarrow$ Huffman/RLE.
    - *Kelebihan:* Rasio kompresi tinggi (10:1 hingga 30:1) dengan kualitas visual baik untuk citra fotografi alami.
    - *Kekurangan:* Menghasilkan *blocking artifacts* dan *ringing artifacts* pada rasio tinggi, tidak sesuai untuk teks atau grafis garis tajam.
-   - *Sitasi:* Wallace, G. K. (1991). *The JPEG still picture compression standard.* IEEE Trans. Consum. Electron. DOI: [10.1109/30.89988](https://doi.org/10.1109/30.89988).
+   - *Sitasi:* Wallace, G. K. (1991). *The JPEG still picture compression standard.* IEEE Trans. Consum. Electron. DOI: [10.1109/30.125072](https://doi.org/10.1109/30.125072).
 
 7. **JPEG 2000 (Discrete Wavelet Transform - DWT)**
    - *Algoritma:* Transformasi Wavelet Multi-resolusi (biorthogonal 9/7 lossy atau 5/3 lossless) $\\rightarrow$ Kuantisasi skalar $\\rightarrow$ EBCOT (*Embedded Block Coding with Optimal Truncation*).
    - *Kelebihan:* Eliminasi *blocking artifacts*, transmisi progresif (SNR dan resolusi), mendukung ROI (*Region of Interest*) coding.
    - *Kekurangan:* Kompleksitas komputasi sangat tinggi, konsumsi memori besar, adopsi peramban web terbatas.
-   - *Sitasi:* Skodras, A., Christopoulos, C., & Ebrahimi, T. (2001). *The JPEG 2000 still image compression standard.* IEEE Signal Process. Mag. DOI: [10.1109/79.952801](https://doi.org/10.1109/79.952801).
+   - *Sitasi:* Skodras, A., Christopoulos, C., & Ebrahimi, T. (2001). *The JPEG 2000 still image compression standard.* IEEE Signal Process. Mag. DOI: [10.1109/79.952804](https://doi.org/10.1109/79.952804).
 
 8. **WebP (VP8/VP8L Intra-Prediction + Arithmetic/LZ77)**
    - *Algoritma:* Mengadaptasi prediksi intra-frame dari video VP8. Untuk mode *lossy*: prediksi spasial blok tetangga $\\rightarrow$ residu di-DCT $\\rightarrow$ kuantisasi $\\rightarrow$ pengkodean aritmatika. Untuk *lossless*: transformasi spasial/warna $\\rightarrow$ LZ77 + Huffman.
@@ -316,7 +357,7 @@ if os.path.exists(grid_fig_path):
     - *Algoritma:* Berbasis *Partitioned Iterated Function Systems* (PIFS). Memanfaatkan *self-similarity* citra pada skala berbeda dengan memetakan blok domain besar ke blok rentang (*range block*) kecil melalui transformasi afina kontraktif.
     - *Kelebihan:* *Resolution independent* (dapat didekompresi ke resolusi lebih tinggi tanpa pikselasi tajam), dekoder cepat.
     - *Kekurangan:* Waktu pencarian blok domain saat enkoding luar biasa lambat, kompleksitas asimetris ekstrem.
-    - *Sitasi:* Jacquin, A. E. (1992). *Image coding based on a fractal theory of iterated contractive image transformations.* IEEE Trans. Image Process. DOI: [10.1109/5.136869](https://doi.org/10.1109/5.136869).
+    - *Sitasi:* Jacquin, A. E. (1992). *Image coding based on a fractal theory of iterated contractive image transformations.* IEEE Trans. Image Process. DOI: [10.1109/83.128028](https://doi.org/10.1109/83.128028).
 
 ---
 
@@ -329,11 +370,11 @@ if os.path.exists(grid_fig_path):
 | 3 | **Arithmetic** | Lossless | Pemetaan interval $[0, 1)$ | 1.8:1 - 3:1 | Identik sempurna | Enkoder: Tinggi, Dekoder: Tinggi | JBIG, JPEG 2000, HEVC | [10.1145/214762.214771](https://doi.org/10.1145/214762.214771) |
 | 4 | **LZW** | Lossless | Kamus dinamis string | 2:1 - 4:1 (grafis) | Identik sempurna | Enkoder: Sedang, Dekoder: Rendah | GIF, TIFF, PDF | [10.1109/MC.1984.1659158](https://doi.org/10.1109/MC.1984.1659158) |
 | 5 | **DEFLATE** | Lossless | LZ77 sliding window + Huffman | 2:1 - 5:1 | Identik sempurna | Enkoder: Sedang-Tinggi, Dekoder: Rendah | PNG, ZIP, Web Assets | [10.17487/RFC1951](https://doi.org/10.17487/RFC1951) |
-| 6 | **JPEG** | Lossy | 2D-DCT $8\\times 8$ + Kuantisasi | 10:1 - 30:1 | Baik pada rasio sedang; *blocking* pada rasio tinggi | Enkoder: Sedang, Dekoder: Sedang | JPEG/JFIF, Kamera Digital | [10.1109/30.89988](https://doi.org/10.1109/30.89988) |
-| 7 | **JPEG 2000** | Lossless / Lossy | DWT Wavelet + EBCOT | 20:1 - 50:1 (lossy) / 2:1 (lossless) | Sangat tinggi, tanpa *blocking* | Enkoder: Sangat Tinggi, Dekoder: Tinggi | Citra Medis DICOM, Sinema DCI | [10.1109/79.952801](https://doi.org/10.1109/79.952801) |
+| 6 | **JPEG** | Lossy | 2D-DCT $8\\times 8$ + Kuantisasi | 10:1 - 30:1 | Baik pada rasio sedang; *blocking* pada rasio tinggi | Enkoder: Sedang, Dekoder: Sedang | JPEG/JFIF, Kamera Digital | [10.1109/30.125072](https://doi.org/10.1109/30.125072) |
+| 7 | **JPEG 2000** | Lossless / Lossy | DWT Wavelet + EBCOT | 20:1 - 50:1 (lossy) / 2:1 (lossless) | Sangat tinggi, tanpa *blocking* | Enkoder: Sangat Tinggi, Dekoder: Tinggi | Citra Medis DICOM, Sinema DCI | [10.1109/79.952804](https://doi.org/10.1109/79.952804) |
 | 8 | **WebP** | Lossless / Lossy | VP8 Intra-prediction + DCT/LZ77 | 15:1 - 40:1 | Sangat tinggi, artefak halus | Enkoder: Tinggi, Dekoder: Sedang | Citra Web Modern, Android | Google WebP Docs |
 | 9 | **Vector Quantization** | Lossy | Clustering Codebook LBG | 10:1 - 30:1 | Sedang, kabur pada batas tepi | Enkoder: Sangat Tinggi, Dekoder: Sangat Rendah | Kompresi Video Awal, VQ Speech | [10.1109/MASSP.1984.1162229](https://doi.org/10.1109/MASSP.1984.1162229) |
-| 10 | **Fractal** | Lossy | PIFS Contractive Mapping | 20:1 - 80:1 | *Resolution-independent* | Enkoder: Ekstrem Tinggi, Dekoder: Rendah | Arsip Citra Resolusi Bebas | [10.1109/5.136869](https://doi.org/10.1109/5.136869) |
+| 10 | **Fractal** | Lossy | PIFS Contractive Mapping | 20:1 - 80:1 | *Resolution-independent* | Enkoder: Ekstrem Tinggi, Dekoder: Rendah | Arsip Citra Resolusi Bebas | [10.1109/83.128028](https://doi.org/10.1109/83.128028) |
 
 ---
 
@@ -360,13 +401,13 @@ if os.path.exists(csv_comp_path):
 fig, axes = plt.subplots(1, 2, figsize=(16, 5))
 
 # 1. Rasio Kompresi
-img_cr = Image.open(os.path.join(OUTPUT_DIR, "chart_compression_ratio.png"))
+img_cr = Image.open(os.path.join(DIR_OUTPUT_B, "chart_compression_ratio.png"))
 axes[0].imshow(img_cr)
 axes[0].axis('off')
 axes[0].set_title("Nisbah / Rasio Kompresi per Format", fontsize=12, fontweight='bold')
 
 # 2. Space Saving (%)
-img_ss = Image.open(os.path.join(OUTPUT_DIR, "chart_space_saving.png"))
+img_ss = Image.open(os.path.join(DIR_OUTPUT_B, "chart_space_saving.png"))
 axes[1].imshow(img_ss)
 axes[1].axis('off')
 axes[1].set_title("Persentase Penghematan Ruang (Space Saving %)", fontsize=12, fontweight='bold')
@@ -376,7 +417,7 @@ plt.show()
 
 # 3. Kualitas vs Waktu
 plt.figure(figsize=(14, 5))
-img_qt = Image.open(os.path.join(OUTPUT_DIR, "chart_quality_and_time.png"))
+img_qt = Image.open(os.path.join(DIR_OUTPUT_B, "chart_quality_and_time.png"))
 plt.imshow(img_qt)
 plt.axis('off')
 plt.title("Evaluasi Kualitas (PSNR) dan Kecepatan Kompresi", fontsize=12, fontweight='bold')
@@ -386,12 +427,12 @@ plt.show()
     cells.append(nbf.v4.new_code_cell("""# Visualisasi Komparasi Visual dan Peta Residual Error (Citra BMP dan SVG)
 fig, axes = plt.subplots(2, 1, figsize=(16, 14))
 
-img_v_bmp = Image.open(os.path.join(OUTPUT_DIR, "visual_comparison_bmp.png"))
+img_v_bmp = Image.open(os.path.join(DIR_OUTPUT_B, "visual_comparison_bmp.png"))
 axes[0].imshow(img_v_bmp)
 axes[0].axis('off')
 axes[0].set_title("Komparasi Visual Rekonstruksi & Heatmap Residual Error (Citra BMP)", fontsize=12, fontweight='bold')
 
-img_v_svg = Image.open(os.path.join(OUTPUT_DIR, "visual_comparison_svg.png"))
+img_v_svg = Image.open(os.path.join(DIR_OUTPUT_B, "visual_comparison_svg.png"))
 axes[1].imshow(img_v_svg)
 axes[1].axis('off')
 axes[1].set_title("Komparasi Visual Rekonstruksi & Heatmap Residual Error (Citra Vektor SVG)", fontsize=12, fontweight='bold')
@@ -457,7 +498,7 @@ display(df_impercept)
 
 # Visualisasi Citra Sebelum dan Sesudah Watermarking
 plt.figure(figsize=(16, 5))
-wm_overview_img = Image.open(os.path.join(OUTPUT_DIR, "watermarking_overview.png"))
+wm_overview_img = Image.open(os.path.join(DIR_OUTPUT_C, "watermarking_overview.png"))
 plt.imshow(wm_overview_img)
 plt.axis('off')
 plt.title("Perbandingan Visual: Citra Asli vs Hasil Watermarking (Visible, LSB, DCT)", fontsize=13, fontweight='bold')
@@ -481,7 +522,7 @@ if os.path.exists(csv_rob_path):
 
     cells.append(nbf.v4.new_code_cell("""# Matriks Visual Ekstraksi Watermark di Bawah Berbagai Serangan (LSB vs DCT)
 plt.figure(figsize=(16, 18))
-wm_matrix_img = Image.open(os.path.join(OUTPUT_DIR, "watermarking_robustness_matrix.png"))
+wm_matrix_img = Image.open(os.path.join(DIR_OUTPUT_C, "watermarking_robustness_matrix.png"))
 plt.imshow(wm_matrix_img)
 plt.axis('off')
 plt.title("Matriks Hasil Ekstraksi Watermark di Bawah Serangan: Perbandingan Ketahanan LSB vs DCT", fontsize=14, fontweight='bold', pad=15)
@@ -529,15 +570,15 @@ plt.show()
 
 1. **Cox, I. J., Miller, M. L., Bloom, J. A., Fridrich, J., & Kalker, T. (2007).** *Digital Watermarking and Steganography* (2nd ed.). Morgan Kaufmann. ISBN: 978-0123725851.
 2. **Deutsch, P. (1996).** *DEFLATE Compressed Data Format Specification version 1.3.* RFC 1951. DOI: [10.17487/RFC1951](https://doi.org/10.17487/RFC1951).
-3. **Dewan, M. A. A., Murshed, M., & Lin, F. (2019).** *Engagement analysis in online learning: A review.* Computers & Education, 141, 103628. DOI: [10.1016/j.compedu.2019.103628](https://doi.org/10.1016/j.compedu.2019.103628).
+3. **Dewan, M. A. A., Murshed, M., & Lin, F. (2019).** *Engagement detection in online learning: a review.* Smart Learning Environments, 6(1), 1. DOI: [10.1186/s40561-018-0080-z](https://doi.org/10.1186/s40561-018-0080-z).
 4. **Golomb, S. (1966).** *Run-length encodings.* IEEE Transactions on Information Theory, 12(3), 399–401. DOI: [10.1109/TIT.1966.1053907](https://doi.org/10.1109/TIT.1966.1053907).
 5. **Gray, R. (1984).** *Vector quantization.* IEEE ASSP Magazine, 1(2), 4–29. DOI: [10.1109/MASSP.1984.1162229](https://doi.org/10.1109/MASSP.1984.1162229).
 6. **Huffman, D. A. (1952).** *A Method for the Construction of Minimum-Redundancy Codes.* Proceedings of the IRE, 40(9), 1098–1101. DOI: [10.1109/JRPROC.1952.273898](https://doi.org/10.1109/JRPROC.1952.273898).
-7. **Jacquin, A. E. (1992).** *Image coding based on a fractal theory of iterated contractive image transformations.* IEEE Transactions on Image Processing, 1(1), 18–30. DOI: [10.1109/5.136869](https://doi.org/10.1109/5.136869).
-8. **Kumar, A., Sharma, R., & Vig, L. (2016).** *DAiSEE: Towards User Engagement Recognition in the Wild.* arXiv preprint arXiv:1609.01883. DOI: [10.48550/arXiv.1609.01883](https://doi.org/10.48550/arXiv.1609.01883).
+7. **Jacquin, A. E. (1992).** *Image coding based on a fractal theory of iterated contractive image transformations.* IEEE Transactions on Image Processing, 1(1), 18–30. DOI: [10.1109/83.128028](https://doi.org/10.1109/83.128028).
+8. **Gupta, A., D'Cunha, A., Awasthi, K., & Balasubramanian, V. (2016).** *DAiSEE: Towards User Engagement Recognition in the Wild.* arXiv preprint arXiv:1609.01885. DOI: [10.48550/arXiv.1609.01885](https://doi.org/10.48550/arXiv.1609.01885).
 9. **Shorten, C., & Khoshgoftaar, T. M. (2019).** *A survey on Image Data Augmentation for Deep Learning.* Journal of Big Data, 6(1), 60. DOI: [10.1186/s40537-019-0197-0](https://doi.org/10.1186/s40537-019-0197-0).
-10. **Skodras, A., Christopoulos, C., & Ebrahimi, T. (2001).** *The JPEG 2000 still image compression standard.* IEEE Signal Processing Magazine, 18(5), 36–58. DOI: [10.1109/79.952801](https://doi.org/10.1109/79.952801).
-11. **Wallace, G. K. (1991).** *The JPEG still picture compression standard.* IEEE Transactions on Consumer Electronics, 38(1), xviii–xxxiv. DOI: [10.1109/30.89988](https://doi.org/10.1109/30.89988).
+10. **Skodras, A., Christopoulos, C., & Ebrahimi, T. (2001).** *The JPEG 2000 still image compression standard.* IEEE Signal Processing Magazine, 18(5), 36–58. DOI: [10.1109/79.952804](https://doi.org/10.1109/79.952804).
+11. **Wallace, G. K. (1991).** *The JPEG still picture compression standard.* IEEE Transactions on Consumer Electronics, 38(1), xviii–xxxiv. DOI: [10.1109/30.125072](https://doi.org/10.1109/30.125072).
 12. **Welch, T. A. (1984).** *A Technique for High-Performance Data Compression.* Computer, 17(6), 8–19. DOI: [10.1109/MC.1984.1659158](https://doi.org/10.1109/MC.1984.1659158).
 13. **Witten, I. H., Neal, R. M., & Cleary, J. G. (1987).** *Arithmetic coding for data compression.* Communications of the ACM, 30(6), 520–540. DOI: [10.1145/214762.214771](https://doi.org/10.1145/214762.214771).
 """))
